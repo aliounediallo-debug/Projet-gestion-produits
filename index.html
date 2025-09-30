@@ -7,5 +7,55 @@
 </head>
 <body>
     
+</body><!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Gestion de Produits </title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header>
+    <h1>Gestion de Produits</h1>
+    
+  </header>
+
+  <!-- Panier -->
+    <aside class="panel cart">
+      <h2>🛒</h2>
+      <div id="cartItems"></div>
+      <div class="cart-footer">
+        <strong>Total: <span id="totalPrice">0</span> FCFA</strong>
+        <button id="clearCartBtn">Vider le panier</button>
+      </div>
+    </aside>
+  </main>
+  
+  <main class="container">
+    <!-- Formulaire d'ajout de produit -->
+    <section class="panel">
+      <h2>Ajouter un produit</h2>
+      <form id="productForm">
+        <label>Nom:<br/><input type="text" id="name" required /></label>
+        <label>Description:<br/><input type="text" id="description" /></label>
+        <label>Prix (FCFA):<br/><input type="number" id="price" min="0" step="0.01" required /></label>
+        <label>Quantité en stock:<br/><input type="number" id="quantity" min="0" required /></label>
+        <label>URL image (optionnel):<br/><input type="url" id="image" /></label>
+        <button type="submit">Ajouter le produit</button>
+      </form>
+    </section>
+
+    <!-- Liste des produits -->
+    <section class="panel products">
+  <h2>Produits</h2>
+  <!-- Les produits seront chargés depuis produits.json -->
+</section>
+
+
+
+  <script src="app.js"></script>
 </body>
+</html>
+
 </html>

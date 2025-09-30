@@ -1,0 +1,62 @@
+[
+  {
+    "name": "Riz",
+    "price": 12500,
+    "qty": 5,
+    "image": "burgerphoto.jpg"
+  },
+  {
+    "name": "Mil",
+    "price": 700,
+    "qty": 10,
+    "image": "sandwich.png"
+  },
+  {
+    "name": "Maïs",
+    "price": 800,
+    "qty": 15,
+    "image": "fataya.jpg"
+  },
+  {
+    "name": "Arachide",
+    "price": 575,
+    "qty": 20,
+    "image": "pizza.avif"
+  },
+  {
+    "name": "Blé",
+    "price": 2100,
+    "qty": 7,
+    "image": "thiéboudiene w.jpg"
+  },
+  {
+    "name": "Mangue",
+    "price": 1100,
+    "qty": 12,
+    "image": "tacos.jpg"
+  },
+  {
+    "name": "Banane",
+    "price": 900,
+    "qty": 18,
+    "image": "thiéboudiene x.jpg"
+  },
+  {
+    "name": "Ananas",
+    "price": 1200,
+    "qty": 10,
+    "image": "mafe.jpg"
+  },
+  {
+    "name": "Orange",
+    "price": 750,
+    "qty": 25,
+    "image": "cBon.jpg"
+  },
+  {
+    "name": "Pomme",
+    "price": 1000,
+    "qty": 14,
+    "image": "thiebou-yapp.jpg"
+  }
+]
