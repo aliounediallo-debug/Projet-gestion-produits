@@ -40,6 +40,33 @@ header h1{
   max-width: 1100px;
 }
 
+.cart-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 10px;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.cart-footer .buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.success-btn {
+  background: var(--success);
+  color: #fff;
+  padding: 8px 12px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+.success-btn:hover {
+  background: #059669;
+}
+
+
 .cart h2 {
   font-size: 18px;
   margin-top: 0;

@@ -58,7 +58,7 @@
   }
 
   // --- Fonction exposée (appelée inline depuis ton HTML)
-  window.ajouterArticle = function(name, price){
+  window.ajouterArticle = function(name, image, price){
     // normalize
     const nm = String(name).trim();
     const pr = Number(price);
@@ -68,7 +68,7 @@
 
     const key = productKey(nm, pr);
     if (!cart[key]) {
-      cart[key] = { name: nm, price: pr, qty: 1, img: findImageForName(nm) };
+      cart[key] = { name: nm, price: pr, qty: 1, img: image };
     } else {
       cart[key].qty += 1;
     }
@@ -83,7 +83,7 @@ const productsSection = document.querySelector(".products");
 
 // Charger produits depuis produits.json
 function chargerProduits() {
-  fetch("produits.json")
+  fetch("produit.json")
     .then(res => res.json())
     .then(data => {
       afficherProduits(data);
@@ -103,11 +103,11 @@ function afficherProduits(produits) {
     const item = document.createElement("div");
     item.className = "item";
     item.innerHTML = `
-      <img src="${p.image}" alt="${p.name}" width="80" height="100">
+      <img src="./img/${p.image}" alt="${p.name}" width="80" height="100">
       <div class="meta">
         <h3>${p.name}</h3>
         <h4>${p.price} FCFA</h4>
-        <button onclick="ajouterArticle('${p.name}', ${p.price})">Commander</button>
+        <button onclick="ajouterArticle('${p.name}', '${p.image}', ${p.price})">Commander</button>
       </div>
     `;
     container.appendChild(item);
@@ -141,7 +141,7 @@ document.addEventListener("DOMContentLoaded", chargerProduits);
       item.className = 'cart-item';
       item.dataset.key = key;
       item.innerHTML = `
-        <img src="${escapeHtml(p.img)}" alt="${escapeHtml(p.name)}"/>
+        <img src="./img/${(p.img)}" alt="${escapeHtml(p.name)}"/>
         <div class="info">
           <div class="name">${escapeHtml(p.name)}</div>
           <div class="sub">${formatNum(p.price)} FCFA • Sous-total: ${formatNum(subtotal)} FCFA</div>
