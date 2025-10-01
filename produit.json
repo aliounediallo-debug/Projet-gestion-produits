@@ -2,61 +2,68 @@
   {
     "name": "Riz",
     "price": 12500,
-    "qty": 5,
+    "qty": 8, 
     "image": "riz.jpg"
-  },
-  {
-    "name": "Mil",
-    "price": 700,
-    "qty": 10,
-    "image": "mil1.jpg"
-  },
-  {
-    "name": "Maïs",
-    "price": 800,
-    "qty": 15,
-    "image": "mais.jpg"
-  },
-  {
-    "name": "Arachide",
-    "price": 575,
-    "qty": 20,
+ },
+
+  { 
+    "name": "Mil", 
+    "price": 700, 
+    "qty": 10, 
+    "image": "mi1.jpg" 
+},
+
+  { 
+    "name": "Maïs", 
+    "price": 800, 
+    "qty": 15, 
+    "image": "mais.jpg" 
+},
+
+  { 
+    "name": "Arrachide", 
+    "price": 575, 
+    "qty": 20, 
     "image": "arrachide.jpg"
-  },
+ },
+
   {
-    "name": "Blé",
-    "price": 2100,
-    "qty": 7,
-    "image": "blé.jpg"
-  },
-  {
-    "name": "Mangue",
-    "price": 1100,
-    "qty": 12,
+     "name": "Blé", 
+     "price": 2100, 
+     "qty": 7, 
+     "image": "blé.jpg" 
+    },
+
+  { 
+    "name": "Mangue", 
+    "price": 1100, 
+    "qty": 12, 
     "image": "mangue.jpg"
-  },
-  {
-    "name": "Banane",
-    "price": 900,
-    "qty": 18,
-    "image": "banane.jpg"
-  },
-  {
-    "name": "Ananas",
-    "price": 1200,
-    "qty": 10,
-    "image": "ananas.jpg"
-  },
-  {
-    "name": "Orange",
-    "price": 750,
-    "qty": 25,
-    "image": "orange.jpg"
-  },
-  {
-    "name": "Pomme",
-    "price": 1000,
-    "qty": 14,
-    "image": "pomme.jpg"
-  }
+ },
+
+  { 
+    "name": "Banane", 
+    "price": 900, 
+    "qty": 18, 
+    "image": "banane.jpg" 
+},
+
+  { 
+    "name": "Ananas", 
+    "price": 1200, 
+    "qty": 10, 
+    "image": "ananas.jpg" 
+},
+  { 
+    "name": "Orange", 
+    "price": 750, 
+    "qty": 25, 
+    "image": "orange.jpg" 
+},
+  { 
+    "name": "Pomme", 
+    "price": 1000, 
+    "qty": 14, 
+    "image": "pomme.jpg" 
+}
 ]

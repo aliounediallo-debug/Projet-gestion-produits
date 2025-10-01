@@ -1,216 +1,277 @@
-/* app.js
-   Gère le panier pour le HTML déjà fourni.
-   - Fonction globale ajouterArticle(name, price) (appelée depuis ton HTML)
-   - Construction automatique d'une "mini-fiche produit" depuis la DOM
-   - Rendu du panier, modification quantités, suppression, clear, persistence localStorage
+/* js/app.js
+   Chargement produits depuis produits.json (fetch) avec fallback inline.
+   Panier (localStorage), ajout, modifier qty, retirer, clear, valider (modal recap).
+   Fonction globale ajouterArticle(name, price) exposée pour compat HTML.
 */
 
 (() => {
-  // --- Sélecteurs (correspondent au HTML fourni)
-  const productsContainer = document.querySelectorAll('.item'); // NodeList des cartes produits
+  // DOM
+  const productsList = document.getElementById('productsList');
   const cartItemsEl = document.getElementById('cartItems');
   const totalPriceEl = document.getElementById('totalPrice');
   const clearCartBtn = document.getElementById('clearCartBtn');
+  const validateCartBtn = document.getElementById('validateCartBtn');
 
-  // --- LocalStorage key
-  const KEY = 'panier_simple_v1';
+  const productForm = document.getElementById('productForm');
+  const reloadProductsBtn = document.getElementById('reloadProductsBtn');
+  const filterBtn = document.getElementById('filterBtn');
+  const showAllBtn = document.getElementById('showAllBtn');
+  const thresholdInput = document.getElementById('threshold');
 
-  // --- Panier en mémoire : { key: {name, price, qty, img} }
-  // key = slug (name sans espaces + price) to identify uniquely
-  let cart = {};
+  // modal
+  const modalOverlay = document.getElementById('modalOverlay');
+  const orderRecap = document.getElementById('orderRecap');
+  const confirmOrderBtn = document.getElementById('confirmOrderBtn');
+  const closeModalBtn = document.getElementById('closeModalBtn');
 
-  // --- Utilitaires
-  function formatNum(n){ 
-    return Number(n).toLocaleString(); 
-  }
-  function saveCart(){
-    localStorage.setItem(KEY, JSON.stringify(cart)); 
-  }
-  function loadCart(){
-    const raw = localStorage.getItem(KEY);
-    if (raw) {
-      try { 
-        cart = JSON.parse(raw) || {}; 
-      } catch(e){ 
-        cart = {};
-      }
-    }
-  }
+  // storage key
+  const STORAGE_KEY = 'marché_panier_v1';
 
-  // Trouve l'image d'un produit en cherchant la carte qui a le même nom (h3)
-  function findImageForName(name){
-    for (const el of productsContainer) {
-      const h = el.querySelector('h3');
-      if (h && h.textContent.trim().toLowerCase() === String(name).trim().toLowerCase()) {
-        const img = el.querySelector('img');
-        if (img) {
-          return img.getAttribute('src') || img.src;
+  // data
+  let products = []; // {name, price, qty, image}
+  let cart = {}; // key -> {name, price, qty, img}
+
+  // helpers
+  const fmt = (n) => Number(n).toLocaleString();
+
+  function saveCart(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(cart)); }
+  function loadCart(){ try{ cart = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; } catch(e){ cart = {}; } }
+
+  // fetch produits.json with fallback to inline <script id="produits-data">
+  async function loadProducts() {
+    try {
+      const resp = await fetch('produits.json', {cache: "no-store"});
+      if (!resp.ok) throw new Error('HTTP ' + resp.status);
+      const data = await resp.json();
+      products = data.map(p => normalizeProduct(p));
+    } catch (err) {
+      // fallback inline JSON in HTML
+      const el = document.getElementById('produits-data');
+      if (el) {
+        try {
+          const inline = JSON.parse(el.textContent);
+          products = inline.map(p => normalizeProduct(p));
+        } catch (e) {
+          console.error('Impossible de parser produits inline', e);
+          products = [];
         }
+      } else {
+        console.error('Erreur chargement produits.json', err);
+        products = [];
       }
     }
-    // fallback placeholder
-    return `https://via.placeholder.com/120x90?text=${encodeURIComponent(name)}`;
+    renderProducts();
   }
 
-  // key de produit (évite collision si même nom mais même prix)
-  function productKey(name, price){
-    return `${String(name).trim().toLowerCase()}__${Number(price)}`;
+  function normalizeProduct(p){
+    return {
+      name: String(p.name || p.nom || 'Produit'),
+      price: Number(p.price || p.prix || 0),
+      qty: Number(p.qty || p.quantity || 0),
+      image: p.image ? String(p.image) : ''
+    };
   }
 
-  // --- Fonction exposée (appelée inline depuis ton HTML)
-  window.ajouterArticle = function(name, image, price){
-    // normalize
-    const nm = String(name).trim();
-    const pr = Number(price);
-    if (!nm || isNaN(pr) || pr < 0) {
-      alert('Produit invalide'); return;
+  // render des produits (carrousel horizontal)
+  function renderProducts(filterThreshold = null) {
+    productsList.innerHTML = '';
+    if (!products.length) {
+      productsList.innerHTML = '<div class="empty">Aucun produit</div>';
+      return;
     }
 
-    const key = productKey(nm, pr);
+    products.forEach((p, idx) => {
+      if (filterThreshold != null && p.qty >= filterThreshold) return;
+      const card = document.createElement('div');
+      card.className = 'card';
+      card.dataset.index = idx;
+      card.innerHTML = `
+        <img src="${escapeHtml(p.image)}" alt="${escapeHtml(p.name)}" onerror="this.src='https://via.placeholder.com/420x300?text=${encodeURIComponent(p.name)}'">
+        <h3>${escapeHtml(p.name)}</h3>
+        <div class="price">${fmt(p.price)} FCFA</div>
+        <div class="stock">Stock: <strong>${p.qty}</strong></div>
+        <div class="actions">
+          <input class="qty" type="number" min="1" value="1" />
+          <button class="addBtn">Ajouter au panier</button>
+        </div>
+      `;
+      productsList.appendChild(card);
+    });
+  }
+
+  function escapeHtml(s){ if (s==null) return ''; return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+  // find product image by name (used for cart if adding by name)
+  function findImage(name){
+    const p = products.find(x => x.name.toLowerCase() === name.toLowerCase());
+    return (p && p.image) ? p.image : `https://via.placeholder.com/120x90?text=${encodeURIComponent(name)}`;
+  }
+
+  // productKey to identify cart entries (name + price)
+  function productKey(name, price){ return `${name.trim().toLowerCase()}__${Number(price)}`; }
+
+  // ajouterArticle exposée pour compatibilité inline (et utilisée par addBtn)
+  window.ajouterArticle = function(name, price) {
+    const key = productKey(name, price);
     if (!cart[key]) {
-      cart[key] = { name: nm, price: pr, qty: 1, img: image };
+      cart[key] = { name, price: Number(price), qty: 1, img: findImage(name) };
     } else {
       cart[key].qty += 1;
     }
-
     saveCart();
     renderCart();
   };
 
-  
-// Sélecteur du container produits
-const productsSection = document.querySelector(".products");
-
-// Charger produits depuis produits.json
-function chargerProduits() {
-  fetch("produit.json")
-    .then(res => res.json())
-    .then(data => {
-      afficherProduits(data);
-    })
-    .catch(err => {
-      console.error("Erreur chargement produits.json", err);
-      productsSection.innerHTML += "<p style='color:red'>Impossible de charger les produits.</p>";
-    });
-}
-
-// Générer le HTML des produits
-function afficherProduits(produits) {
-  const container = document.createElement("div");
-  container.classList.add("list");
-
-  produits.forEach(p => {
-    const item = document.createElement("div");
-    item.className = "item";
-    item.innerHTML = `
-      <img src="./img/${p.image}" alt="${p.name}" width="80" height="100">
-      <div class="meta">
-        <h3>${p.name}</h3>
-        <h4>${p.price} FCFA</h4>
-        <button onclick="ajouterArticle('${p.name}', '${p.image}', ${p.price})">Commander</button>
-      </div>
-    `;
-    container.appendChild(item);
-  });
-
-  productsSection.appendChild(container);
-}
-
-// Appeler le chargement au démarrage
-document.addEventListener("DOMContentLoaded", chargerProduits);
-
-
-
-  // --- Rendu du panier
+  // render cart
   function renderCart(){
     cartItemsEl.innerHTML = '';
     const keys = Object.keys(cart);
-    if (keys.length === 0) {
+    if (!keys.length) {
       cartItemsEl.innerHTML = '<div class="empty">Ton panier est vide</div>';
       totalPriceEl.textContent = '0';
       return;
     }
 
     let total = 0;
-    for (const key of keys) {
+    keys.forEach(key => {
       const p = cart[key];
-      const subtotal = p.qty * p.price;
-      total += subtotal;
-
-      const item = document.createElement('div');
-      item.className = 'cart-item';
-      item.dataset.key = key;
-      item.innerHTML = `
-        <img src="./img/${(p.img)}" alt="${escapeHtml(p.name)}"/>
+      const sub = p.price * p.qty;
+      total += sub;
+      const node = document.createElement('div');
+      node.className = 'cart-item';
+      node.dataset.key = key;
+      node.innerHTML = `
+        <img src="${escapeHtml(p.img)}" alt="${escapeHtml(p.name)}" onerror="this.src='https://via.placeholder.com/120x90?text=${encodeURIComponent(p.name)}'"/>
         <div class="info">
           <div class="name">${escapeHtml(p.name)}</div>
-          <div class="sub">${formatNum(p.price)} FCFA • Sous-total: ${formatNum(subtotal)} FCFA</div>
+          <div class="sub">${fmt(p.price)} FCFA le kg • Sous-total: ${fmt(sub)} FCFA le kg</div>
         </div>
         <div class="qty-controls">
           <button class="dec">-</button>
           <input type="number" class="qty" value="${p.qty}" min="1" />
           <button class="inc">+</button>
-          <button class="remove" title="Retirer" style="margin-left:8px;background:#fee2e2;color:${'#b91c1c'};border-radius:6px;padding:6px 8px;border:none;cursor:pointer">✕</button>
+          <button class="remove" title="Retirer" style="background:#fee2e2;color:#b91c1c;border:none;border-radius:6px;padding:6px 8px;cursor:pointer;margin-left:6px">✕</button>
         </div>
       `;
-      cartItemsEl.appendChild(item);
-    }
-
-    totalPriceEl.textContent = formatNum(total);
+      cartItemsEl.appendChild(node);
+    });
+    totalPriceEl.textContent = fmt(total);
   }
 
-  // simple escape pour src/texte
-  function escapeHtml(s){
-    if (s == null) return '';
-    return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  }
-
-  // --- Écouteurs (délégation sur cartItems)
-  cartItemsEl.addEventListener('click', (ev) => {
-    const target = ev.target;
-    const card = target.closest('.cart-item');
-    if (!card) return;
-    const key = card.dataset.key;
-    if (!key || !cart[key]) return;
-
-    if (target.classList.contains('inc')) {
-      cart[key].qty += 1;
-      saveCart(); renderCart();
-    } else if (target.classList.contains('dec')) {
-      if (cart[key].qty > 1) { cart[key].qty -= 1; saveCart(); renderCart(); }
-    } else if (target.classList.contains('remove')) {
-      delete cart[key]; saveCart(); renderCart();
-    }
+  // délégation pour boutons inside productsList (Commander)
+  productsList.addEventListener('click', (ev) => {
+    const btn = ev.target.closest('.addBtn');
+    if (!btn) return;
+    const card = btn.closest('.card');
+    const idx = Number(card.dataset.index);
+    const qtyInput = card.querySelector('.qty');
+    const qty = Math.max(1, parseInt(qtyInput.value, 10) || 1);
+    const prod = products[idx];
+    if (!prod) return;
+    if (qty > prod.qty) { alert('Stock insuffisant'); return; }
+    // decrement product stock
+    prod.qty -= qty;
+    // add to cart
+    const key = productKey(prod.name, prod.price);
+    if (!cart[key]) cart[key] = { name: prod.name, price: prod.price, qty: qty, img: prod.image || findImage(prod.name) };
+    else cart[key].qty += qty;
+    saveCart();
+    renderProducts(); // update stock display
+    renderCart();
   });
 
-  // input change (qty edits)
+  // délégation pour cart interactions
+  cartItemsEl.addEventListener('click', (ev) => {
+    const btn = ev.target;
+    const item = btn.closest('.cart-item');
+    if (!item) return;
+    const key = item.dataset.key;
+    if (!key || !cart[key]) return;
+    if (btn.classList.contains('inc')) { cart[key].qty += 1; saveCart(); renderCart(); }
+    else if (btn.classList.contains('dec')) { if (cart[key].qty > 1) { cart[key].qty -= 1; saveCart(); renderCart(); } }
+    else if (btn.classList.contains('remove')) { delete cart[key]; saveCart(); renderCart(); }
+  });
+
+  // input change in cart qty
   cartItemsEl.addEventListener('input', (ev) => {
     if (!ev.target.classList.contains('qty')) return;
-    const card = ev.target.closest('.cart-item');
-    const key = card?.dataset.key;
-    if (!key || !cart[key]) return;
+    const item = ev.target.closest('.cart-item');
+    const key = item.dataset.key;
     let v = parseInt(ev.target.value, 10);
     if (isNaN(v) || v < 1) v = 1;
     cart[key].qty = v;
-    saveCart();
-    renderCart();
-  });
-
-  // Clear panier
-  clearCartBtn?.addEventListener('click', () => {
-    if (!confirm('Vider entièrement le panier ?')) return;
-    cart = {};
     saveCart(); renderCart();
   });
 
-  // --- Init : load et render
+  // clear cart
+  clearCartBtn.addEventListener('click', () => {
+    if (!confirm('Vider le panier ?')) return;
+    cart = {}; saveCart(); renderCart();
+  });
+
+  // validate -> show modal recap
+  validateCartBtn.addEventListener('click', () => {
+    const keys = Object.keys(cart);
+    if (!keys.length) { alert('Panier vide'); return; }
+    let recap = '';
+    let total = 0;
+    keys.forEach(k => {
+      const p = cart[k];
+      recap += `• ${p.name} x${p.qty} → ${fmt(p.price * p.qty)} FCFA\n`;
+      total += p.price * p.qty;
+    });
+    recap += `\nTotal: ${fmt(total)} FCFA`;
+    orderRecap.textContent = recap;
+    openModal();
+  });
+
+  // modal controls
+  function openModal(){ modalOverlay.style.display = 'flex'; modalOverlay.setAttribute('aria-hidden','false'); }
+  function closeModal(){ modalOverlay.style.display = 'none'; modalOverlay.setAttribute('aria-hidden','true'); }
+
+  closeModalBtn.addEventListener('click', closeModal);
+  modalOverlay.addEventListener('click', (e) => { if (e.target === modalOverlay) closeModal(); });
+
+  // confirm order: simulate, clear cart and close modal
+  confirmOrderBtn.addEventListener('click', () => {
+    alert('Commande confirmée. Merci !');
+    cart = {}; saveCart(); renderCart();
+    closeModal();
+  });
+
+  // form add product (optional)
+  productForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const name = document.getElementById('inputName').value.trim();
+    const price = Number(document.getElementById('inputPrice').value);
+    const qty = Number(document.getElementById('inputQty').value);
+    const image = document.getElementById('inputImage').value.trim();
+    if (!name || isNaN(price) || isNaN(qty)) { alert('Remplis correctement le formulaire'); return; }
+    products.push({ name, price, qty, image });
+    renderProducts();
+    productForm.reset();
+  });
+
+  // reload products from produits.json (revert to server/inline source)
+  reloadProductsBtn.addEventListener('click', () => {
+    if (!confirm('Recharger produits depuis produits.json (remplacera la liste actuelle) ?')) return;
+    loadProducts();
+  });
+
+  // filters
+  filterBtn.addEventListener('click', () => {
+    const t = parseInt(thresholdInput.value, 10);
+    if (isNaN(t)) return;
+    renderProducts(t);
+  });
+  showAllBtn.addEventListener('click', () => renderProducts());
+
+  // init
   function init(){
     loadCart();
-    renderCart();
-
-    // remplacer les onclick inline (optionnel) : si tu veux, on peut aussi attacher listeners modernes
-    // mais on laisse la fonction globale ajouterArticle pour compatibilité
-    // Désactivation visuelle des "Commander" si image/non dispo ? (non nécessaire)
+    loadProducts().then(() => {
+      renderCart();
+    });
   }
 
   document.addEventListener('DOMContentLoaded', init);

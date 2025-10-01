@@ -1,64 +1,90 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
-</head>
-<body>
-    
-</body><!DOCTYPE html>
 <html lang="fr">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Gestion de Produits </title>
+  <title>Gestion Produits</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <header>
-    <h1>Gestion de Produits</h1>
-    
+    <h1>Marché - Gestion Produits</h1>
   </header>
 
-  <!-- Panier -->
-   <aside class="panel cart">
-  <h2>🛒 </h2>
-  <div id="cartItems"></div>
-  <div class="cart-footer">
-    <strong>Total: <span id="totalPrice">0</span> FCFA</strong>
-    <div class="buttons">
-      <button id="validateCartBtn" class="success-btn">Valider la commande</button>
-      <button id="clearCartBtn" class="clear-btn">Vider le panier</button>
+  <!-- Panier en haut -->
+  <aside class="panel cart" id="topCart">
+    <h2>🛒 Mon Panier</h2>
+    <div id="cartItems"></div>
+    <div class="cart-footer">
+      <strong>Total: <span id="totalPrice">0</span> FCFA</strong>
+      <div class="buttons">
+        <button id="validateCartBtn" class="success-btn">Valider la commande</button>
+        <button id="clearCartBtn" class="clear-btn">Vider le panier</button>
+      </div>
     </div>
-  </div>
-</aside>
-  </main>
-  
+  </aside>
+
   <main class="container">
-    <!-- Formulaire d'ajout de produit -->
-    <section class="panel">
-      <h2>Ajouter un produit</h2>
-      <form id="productForm">
-        <label>Nom:<br/><input type="text" id="name" required /></label>
-        <label>Description:<br/><input type="text" id="description" /></label>
-        <label>Prix (FCFA):<br/><input type="number" id="price" min="0" step="0.01" required /></label>
-        <label>Quantité en stock:<br/><input type="number" id="quantity" min="0" required /></label>
-        <label>URL image (optionnel):<br/><input type="url" id="image" /></label>
-        <button type="submit">Ajouter le produit</button>
+    <!-- Left column: form + controls -->
+    <section class="panel controls">
+      <h2>Ajouter un produit (optionnel)</h2>
+      <form id="productForm" class="product-form">
+        <label>Nom<br/><input id="inputName" required /></label>
+        <label>Prix (FCFA)<br/><input id="inputPrice" type="number" min="0" step="1" required /></label>
+        <label>Quantité<br/><input id="inputQty" type="number" min="0" value="1" required /></label>
+        <label>URL image (optionnel)<br/><input id="inputImage" placeholder="images/monimage.jpg ou https://..." /></label>
+        <div class="form-actions">
+          <button type="submit">Ajouter</button>
+          <button type="button" id="reloadProductsBtn">Recharger produits</button>
+        </div>
       </form>
+
+      <hr/>
+
+      <h2>Filtres</h2>
+      <div class="filter-row">
+        <label>Seuil stock &lt; <input id="threshold" type="number" value="10" min="0"/></label>
+        <button id="filterBtn">Afficher</button>
+        <button id="showAllBtn">Tout</button>
+      </div>
     </section>
 
-    <!-- Liste des produits -->
+    <!-- Right column: produits -->
     <section class="panel products">
-  <h2>Produits</h2>
-  <!-- Les produits seront chargés depuis produits.json -->
-</section>
+      <h2>Produits</h2>
+      <!-- container où seront insérées les cartes en horizontal -->
+      <div id="productsList" class="list" aria-live="polite"></div>
+    </section>
+  </main>
 
+  <!-- Inline fallback JSON (utile si tu ouvres en file://) -->
+  <script id="produits-data" type="application/json">
+[
+  {"name":"Riz","price":12500,"qty":5,"image":"images/burgerphoto.jpg"},
+  {"name":"Mil","price":700,"qty":10,"image":"images/sandwich.png"},
+  {"name":"Maïs","price":800,"qty":15,"image":"images/fataya.jpg"},
+  {"name":"Arachide","price":575,"qty":20,"image":"images/pizza.avif"},
+  {"name":"Blé","price":2100,"qty":7,"image":"images/thiéboudiene_w.jpg"},
+  {"name":"Mangue","price":1100,"qty":12,"image":"images/tacos.jpg"},
+  {"name":"Banane","price":900,"qty":18,"image":"images/thiéboudiene_x.jpg"},
+  {"name":"Ananas","price":1200,"qty":10,"image":"images/mafe.jpg"},
+  {"name":"Orange","price":750,"qty":25,"image":"images/cBon.jpg"},
+  {"name":"Pomme","price":1000,"qty":14,"image":"images/thiebou-yapp.jpg"}
+]
+  </script>
 
+  <!-- Modal récap (hidden) -->
+  <div id="modalOverlay" class="modal-overlay" aria-hidden="true">
+    <div class="modal">
+      <h3>Récapitulatif de la commande</h3>
+      <pre id="orderRecap" class="recap"></pre>
+      <div class="modal-actions">
+        <button id="confirmOrderBtn" class="success-btn">Confirmer</button>
+        <button id="closeModalBtn" class="clear-btn">Fermer</button>
+      </div>
+    </div>
+  </div>
 
   <script src="app.js"></script>
 </body>
-</html>
-
 </html>
