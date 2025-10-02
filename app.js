@@ -40,7 +40,7 @@
   // fetch produits.json with fallback to inline <script id="produits-data">
   async function loadProducts() {
     try {
-      const resp = await fetch('produits.json', {cache: "no-store"});
+      const resp = await fetch('produit.json', {cache: "no-store"});
       if (!resp.ok) throw new Error('HTTP ' + resp.status);
       const data = await resp.json();
       products = data.map(p => normalizeProduct(p));
@@ -56,7 +56,7 @@
           products = [];
         }
       } else {
-        console.error('Erreur chargement produits.json', err);
+        console.error('Erreur chargement produit.json', err);
         products = [];
       }
     }
